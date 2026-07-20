@@ -4216,6 +4216,25 @@ tensor(..., device='meta', size=(1,), requires_grad=True)""")
         out2 = nn.BCEWithLogitsLoss(pos_weight=pos_weight)(output, target)
         self.assertTrue(torch.isfinite(out2).all().item())
 
+    def test_bce_with_logits_extreme_values(self):
+        target = torch.rand(2)
+        output = torch.tensor([float("inf"), float("-inf")])
+        loss_logits = F.binary_cross_entropy_with_logits(
+            output, target, reduction="none"
+        )
+        loss_bce = F.binary_cross_entropy(
+            output.sigmoid(), target, reduction="none"
+        )
+        self.assertFalse(loss_logits.isnan().any())
+        self.assertTrue(torch.allclose(loss_logits, loss_bce))
+
+        pos_weight = torch.ones(2)
+        loss_pw = F.binary_cross_entropy_with_logits(
+            output, target, pos_weight=pos_weight, reduction="none"
+        )
+        self.assertFalse(loss_pw.isnan().any())
+        self.assertTrue(torch.allclose(loss_pw, loss_logits))
+
     def test_bce_loss_broadcasts_weights(self):
         sigmoid = nn.Sigmoid()
         target = torch.rand(16, 4)
