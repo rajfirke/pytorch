@@ -936,6 +936,76 @@ Tensor& clip_(
   return at::clamp_(self, min, max);
 }
 
+// Mixed Scalar/Tensor overloads for clamp — convert scalar to tensor
+static std::optional<Tensor> scalar_to_tensor(
+    const std::optional<Scalar>& s, const Tensor& ref) {
+  if (!s.has_value()) return std::nullopt;
+  return at::scalar_tensor(s.value(), ref.options());
+}
+
+static std::optional<Tensor> scalar_to_tensor_t(
+    const std::optional<Scalar>& s, const Tensor& ref) {
+  if (!s.has_value()) return std::nullopt;
+  auto result_type = at::native::result_type(ref, s.value());
+  return at::scalar_tensor(s.value(), ref.options().dtype(result_type));
+}
+
+Tensor clamp(
+    const Tensor& self,
+    const std::optional<Scalar>& min,
+    const std::optional<Tensor>& max) {
+  return at::clamp(self, scalar_to_tensor_t(min, self), max);
+}
+
+Tensor clamp(
+    const Tensor& self,
+    const std::optional<Tensor>& min,
+    const std::optional<Scalar>& max) {
+  return at::clamp(self, min, scalar_to_tensor_t(max, self));
+}
+
+Tensor& clamp_(
+    Tensor& self,
+    const std::optional<Scalar>& min,
+    const std::optional<Tensor>& max) {
+  return at::clamp_(self, scalar_to_tensor(min, self), max);
+}
+
+Tensor& clamp_(
+    Tensor& self,
+    const std::optional<Tensor>& min,
+    const std::optional<Scalar>& max) {
+  return at::clamp_(self, min, scalar_to_tensor(max, self));
+}
+
+Tensor clip(
+    const Tensor& self,
+    const std::optional<Scalar>& min,
+    const std::optional<Tensor>& max) {
+  return at::clamp(self, scalar_to_tensor_t(min, self), max);
+}
+
+Tensor clip(
+    const Tensor& self,
+    const std::optional<Tensor>& min,
+    const std::optional<Scalar>& max) {
+  return at::clamp(self, min, scalar_to_tensor_t(max, self));
+}
+
+Tensor& clip_(
+    Tensor& self,
+    const std::optional<Scalar>& min,
+    const std::optional<Tensor>& max) {
+  return at::clamp_(self, scalar_to_tensor(min, self), max);
+}
+
+Tensor& clip_(
+    Tensor& self,
+    const std::optional<Tensor>& min,
+    const std::optional<Scalar>& max) {
+  return at::clamp_(self, min, scalar_to_tensor(max, self));
+}
+
 TORCH_IMPL_FUNC(isin_Tensor_Tensor_out)
 (const Tensor& elements,
  const Tensor& test_elements,
