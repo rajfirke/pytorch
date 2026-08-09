@@ -5173,11 +5173,12 @@ def mv(self, vec):
 def binary_cross_entropy_with_logits(
     self, target, weight=None, pos_weight=None, reduction=Reduction.MEAN.value
 ):
+    clamped = torch.clamp(self, -100, 100)
     if pos_weight is not None:
         log_weight = (pos_weight - 1) * target + 1
-        loss = (1 - target) * self - (log_weight * F.logsigmoid(self))
+        loss = (1 - target) * clamped - (log_weight * F.logsigmoid(clamped))
     else:
-        loss = (1 - target) * self - F.logsigmoid(self)
+        loss = (1 - target) * clamped - F.logsigmoid(clamped)
 
     if weight is not None:
         loss = loss * weight
