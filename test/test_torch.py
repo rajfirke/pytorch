@@ -6730,6 +6730,31 @@ class TestDevicePrecision(TestCase):
             actual = x[..., :1].clamp(lb, ub)
             self.assertEqual(expect, actual)
 
+    @dtypes(torch.float32, torch.float64)
+    def test_clamp_mixed_scalar_tensor(self, device, dtype):
+        x = torch.tensor([0., 1., 2., 3., 4., 5., 6., 7.], device=device, dtype=dtype)
+        expected = torch.tensor([2., 2., 2., 3., 4., 5., 5., 5.], device=device, dtype=dtype)
+
+        result = torch.clamp(x, min=2., max=torch.tensor([5.], device=device, dtype=dtype))
+        self.assertEqual(result, expected)
+
+        result = torch.clamp(x, min=torch.tensor([2.], device=device, dtype=dtype), max=5.)
+        self.assertEqual(result, expected)
+
+        result = torch.clip(x, min=2., max=torch.tensor([5.], device=device, dtype=dtype))
+        self.assertEqual(result, expected)
+
+        result = torch.clip(x, min=torch.tensor([2.], device=device, dtype=dtype), max=5.)
+        self.assertEqual(result, expected)
+
+        x2 = x.clone()
+        x2.clamp_(min=2., max=torch.tensor([5.], device=device, dtype=dtype))
+        self.assertEqual(x2, expected)
+
+        x3 = x.clone()
+        x3.clamp_(min=torch.tensor([2.], device=device, dtype=dtype), max=5.)
+        self.assertEqual(x3, expected)
+
     def test_cuda_device_idx(self, device):
         x = torch.zeros(3, device=device)
         y = torch._efficientzerotensor(3, device=device)
